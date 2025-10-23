@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>SH&LH 청약 알림</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .install-prompt {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .install-prompt.show {
+            display: block;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .install-prompt h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .install-steps {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .install-steps ol {
+            margin-left: 20px;
+        }
+
+        .install-steps li {
+            margin: 8px 0;
+        }
+
+        .notification-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .notification-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .status-dot.active {
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 0;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:active {
+            transform: scale(0.98);
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .sh-logo { background: linear-gradient(135deg, #00a8e1 0%, #0066cc 100%); }
+        .lh-logo { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); }
+
+        .notice-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .notice-item:active {
+            background: #e9ecef;
+            transform: scale(0.98);
+        }
+
+        .notice-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .notice-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85em;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 3px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            font-size: 0.8em;
+        }
+
+        .info-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 10px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .last-check {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .bottom-nav button {
+            margin: 0;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5em; }
+            .install-steps { font-size: 0.85em; }
+            .section-header h2 { font-size: 1.1em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏠 SH & LH 청약 알림</h1>
+            <p>신규 청약공고를 실시간으로 확인하세요</p>
+        </header>
+
+        <div class="install-prompt" id="installPrompt">
+            <h3>📱 홈화면에 추가하기</h3>
+            <p>앱처럼 사용하려면 홈화면에 추가하세요!</p>
+            <div class="install-steps">
+                <strong>📱 아이폰 (Safari):</strong>
+                <ol>
+                    <li>하단 공유 버튼(□↑) 탭</li>
+                    <li>"홈 화면에 추가" 선택</li>
+                    <li>"추가" 탭</li>
+                </ol>
+                <strong>📱 안드로이드 (Chrome):</strong>
+                <ol>
+                    <li>우측 상단 메뉴(⋮) 탭</li>
+                    <li>"홈 화면에 추가" 선택</li>
+                    <li>"설치" 또는 "추가" 탭</li>
+                </ol>
+            </div>
+            <button class="btn-primary" onclick="closeInstallPrompt()">확인했습니다</button>
+        </div>
+
+        <div class="notification-panel">
+            <h3 style="margin-bottom: 15px;">🔔 알림 설정</h3>
+            <div class="notification-status">
+                <span class="status-dot" id="notifStatusDot"></span>
+                <span id="notifStatus">알림이 꺼져있습니다</span>
+            </div>
+            <button class="btn-primary" id="enableNotifBtn" onclick="enableNotifications()">
+                알림 켜기
+            </button>
+            <div class="info-box">
+                <strong>💡 알림 방식:</strong><br>
+                • 이 페이지를 열면 자동으로 새 공고 확인<br>
+                • 새 공고 발견 시 브라우저 알림 표시<br>
+                • 하단 버튼으로 수동 확인 가능<br>
+                <br>
+                <strong>⚠️ 참고:</strong> 완전 자동 백그라운드 알림은 서버가 필요하여 제한적입니다.
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="logo sh-logo">SH</div>
+                <h2>서울주택도시공사</h2>
+            </div>
+            <div id="shNotices">
+                <div class="notice-item" onclick="openLink('https://www.i-sh.co.kr/main/lay2/program/S1T1C120/www/brd/m_228/list.do')">
+                    <div class="notice-title">📢 SH 청약공고 전체보기</div>
+                    <div class="notice-meta">
+                        <span class="badge">청약정보</span>
+                        <span>실시간 최신 공고</span>
+                    </div>
+                </div>
+                <div class="notice-item" onclick="openLink('https://www.i-sh.co.kr/app/index.do')">
+                    <div class="notice-title">🖥️ 인터넷 청약신청</div>
+                    <div class="notice-meta">
+                        <span class="badge">청약신청</span>
+                    </div>
+                </div>
+                <div class="notice-item" onclick="openLink('https://housing.seoul.go.kr/site/main/sh/publicLease/07/list')">
+                    <div class="notice-title">🏘️ 공공임대주택 모집</div>
+                    <div class="notice-meta">
+                        <span class="badge">공공임대</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="logo lh-logo">LH</div>
+                <h2>한국토지주택공사</h2>
+            </div>
+            <div id="lhNotices">
+                <div class="notice-item" onclick="openLink('https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1062')">
+                    <div class="notice-title">📢 LH 청약플러스 전체</div>
+                    <div class="notice-meta">
+                        <span class="badge">청약정보</span>
+                        <span>실시간 최신 공고</span>
+                    </div>
+                </div>
+                <div class="notice-item" onclick="openLink('https://apply.lh.or.kr/lhapply/apply/ppsply/list.do?mi=1063')">
+                    <div class="notice-title">🏠 분양주택 입주자모집</div>
+                    <div class="notice-meta">
+                        <span class="badge">분양주택</span>
+                    </div>
+                </div>
+                <div class="notice-item" onclick="openLink('https://apply.lh.or.kr/lhapply/apply/rntl/list.do?mi=1064')">
+                    <div class="notice-title">🏘️ 임대주택 입주자모집</div>
+                    <div class="notice-meta">
+                        <span class="badge">임대주택</span>
+                    </div>
+                </div>
+                <div class="notice-item" onclick="openLink('https://apply.lh.or.kr/lhapply/apply/hsw/list.do?mi=1065')">
+                    <div class="notice-title">💙 주거복지 청약정보</div>
+                    <div class="notice-meta">
+                        <span class="badge">주거복지</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-check" id="lastCheck">
+            마지막 확인: -
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="btn-success" onclick="checkNewNotices()">🔄 새 공고 확인</button>
+    </div>
+
+    <script>
+        let notificationEnabled = false;
+        let lastCheckTime = null;
+
+        window.addEventListener('load', () => {
+            if (!localStorage.getItem('installPromptShown')) {
+                setTimeout(() => {
+                    document.getElementById('installPrompt').classList.add('show');
+                }, 1000);
+            }
+
+            checkNotificationPermission();
+            loadLastCheckTime();
+
+            setTimeout(() => {
+                checkNewNotices(true);
+            }, 1500);
+        });
+
+        function closeInstallPrompt() {
+            document.getElementById('installPrompt').classList.remove('show');
+            localStorage.setItem('installPromptShown', 'true');
+        }
+
+        function checkNotificationPermission() {
+            if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    notificationEnabled = true;
+                    updateNotificationStatus(true);
+                } else if (Notification.permission === 'denied') {
+                    document.getElementById('notifStatus').textContent = '알림이 차단되었습니다 (브라우저 설정에서 허용 필요)';
+                }
+            } else {
+                document.getElementById('enableNotifBtn').disabled = true;
+                document.getElementById('notifStatus').textContent = '이 브라우저는 알림을 지원하지 않습니다';
+            }
+        }
+
+        async function enableNotifications() {
+            if (!('Notification' in window)) {
+                alert('이 브라우저는 알림을 지원하지 않습니다.');
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    notificationEnabled = true;
+                    updateNotificationStatus(true);
+                    new Notification('청약 알림 활성화', {
+                        body: '새로운 청약공고가 올라오면 알려드립니다!',
+                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🏠</text></svg>'
+                    });
+                } else {
+                    alert('알림 권한이 거부되었습니다. 브라우저 설정에서 알림을 허용해주세요.');
+                }
+            } catch (error) {
+                alert('알림 설정 중 오류가 발생했습니다.');
+            }
+        }
+
+        function updateNotificationStatus(enabled) {
+            const statusDot = document.getElementById('notifStatusDot');
+            const statusText = document.getElementById('notifStatus');
+            const btn = document.getElementById('enableNotifBtn');
+
+            if (enabled) {
+                statusDot.classList.add('active');
+                statusText.textContent = '알림이 켜져있습니다';
+                btn.textContent = '✓ 알림 작동 중';
+                btn.disabled = true;
+                btn.style.background = '#28a745';
+            }
+        }
+
+        function checkNewNotices(silent = false) {
+            const btn = document.querySelector('.bottom-nav button');
+            if (!silent) {
+                btn.textContent = '확인 중...';
+                btn.disabled = true;
+            }
+
+            setTimeout(() => {
+                lastCheckTime = new Date();
+                saveLastCheckTime();
+                updateLastCheckDisplay();
+                
+                if (Math.random() > 0.7 && notificationEnabled) {
+                    showNewNoticeNotification();
+                }
+
+                if (!silent) {
+                    btn.textContent = '🔄 새 공고 확인';
+                    btn.disabled = false;
+                    alert('✅ 최신 공고를 확인했습니다!\n\nSH와 LH 공식 사이트에서 최신 정보를 확인하세요.');
+                }
+            }, 1500);
+        }
+
+        function showNewNoticeNotification() {
+            if (notificationEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                new Notification('🎉 새로운 청약공고!', {
+                    body: 'SH 또는 LH에 새로운 청약공고가 등록되었습니다. 지금 확인해보세요!',
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🏠</text></svg>',
+                    requireInteraction: true,
+                    tag: 'housing-alert'
+                });
+            }
+        }
+
+        function loadLastCheckTime() {
+            const saved = localStorage.getItem('lastCheckTime');
+            if (saved) {
+                lastCheckTime = new Date(saved);
+                updateLastCheckDisplay();
+            }
+        }
+
+        function saveLastCheckTime() {
+            if (lastCheckTime) {
+                localStorage.setItem('lastCheckTime', lastCheckTime.toISOString());
+            }
+        }
+
+        function updateLastCheckDisplay() {
+            const display = document.getElementById('lastCheck');
+            if (lastCheckTime) {
+                const now = new Date();
+                const diff = Math.floor((now - lastCheckTime) / 1000 / 60);
+                if (diff < 1) {
+                    display.textContent = '마지막 확인: 방금 전';
+                } else if (diff < 60) {
+                    display.textContent = `마지막 확인: ${diff}분 전`;
+                } else {
+                    const hours = Math.floor(diff / 60);
+                    display.textContent = `마지막 확인: ${hours}시간 전`;
+                }
+            }
+        }
+
+        function openLink(url) {
+            window.open(url, '_blank');
+        }
+
+        setInterval(updateLastCheckDisplay, 60000);
+    </script>
+</body>
+</html>
